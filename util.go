@@ -3,16 +3,25 @@ package wpt
 
 import (
 	"encoding/json"
+	"log"
+
+	"github.com/gocarina/gocsv"
 )
 
-func parse(data []byte, format string, response interface{}) error {
+func parseData(data []byte, format string, response interface{}) error {
 	var err error = nil
 
 	switch format {
 	case "json":
-		err = json.Unmarshal(data, &response)
+		err = json.Unmarshal(data, response)
 	case "csv":
+		err = gocsv.UnmarshalBytes(data, response)
+	default:
+		log.Println("Unknown format : ", format)
+	}
 
+	if err != nil {
+		log.Println(err)
 	}
 
 	return err
