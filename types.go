@@ -16,6 +16,10 @@ const (
 	wptQueryTestHistory = "testlog.php"
 )
 
+const (
+	wptStatusOk = 200
+)
+
 var (
 	errCreateRequest = errors.New("Error creating request")
 	errQueryServer   = errors.New("Error querying WPT server")
@@ -344,4 +348,93 @@ type HistoryItem struct {
 	TestID   string `csv:"Test ID"`
 	URL      string `csv:"URL"`
 	Label    string `csv:"Label"`
+}
+
+type Test struct {
+	Client  *Client
+	Options *TestOptions
+}
+
+type TestOptions struct {
+	URL            string   `url:"url"`
+	Label          string   `url:"label,omitempty"`
+	Location       string   `url:"-"`
+	Connectivity   string   `url:"-"`
+	LocationString string   `url:"location,omitempty"`
+	Block          []string `url:"-"`
+	BlockString    string   `url:"block,omitempty"`
+	Login          string   `url:"login,omitempty"`
+	Password       string   `url:"password,omitempty"`
+	Notify         string   `url:"notify,omitempty"`
+	Pingback       string   `url:"pingback,omitempty"`
+	CMDLine        string   `url:"cmdline,omitempty"`
+	TSViewID       string   `url:"tsview_id,omitempty"`
+	Custom         string   `url:"custom,omitempty"`
+	Tester         string   `url:"tester,omitempty"`
+	Affinity       string   `url:"affinity,omitempty"`
+	DomElement     string   `url:"domelement,omitempty"`
+	Script         string   `url:"script,omitempty"`
+	TimelineStack  int      `url:"timelineStack,omitempty"`
+	Runs           int      `url:"runs,omitempty"`
+	Connections    int      `url:"connections,omitempty"`
+	Authtype       int      `url:"authType,omitempty"`
+	BWDown         int      `url:"bwDown,omitempty"`
+	BWUp           int      `url:"bwUp,omitempty"`
+	Latency        int      `url:"latency,omitempty"`
+	PackLossRate   int      `url:"plr,omitempty"`
+	IQ             int      `url:"iq,omitempty"`
+	FVOnly         int      `url:"fvonly,omitempty"`
+	Private        int      `url:"private,omitempty"`
+	StopOnLoad     int      `url:"web10,omitempty"`
+	Video          int      `url:"video,omitempty"`
+	TCPDump        int      `url:"tcpdump,omitempty"`
+	NoOpt          int      `url:"noopt,omitempty"`
+	NoImages       int      `url:"noimages,omitempty"`
+	NoHeaders      int      `url:"noheaders,omitempty"`
+	PNGSS          int      `url:"pngss,omitempty"`
+	NoScript       int      `url:"noscript,omitempty"`
+	ClearCerts     int      `url:"clearcerts,omitempty"`
+	Mobile         int      `url:"mobile,omitempty"`
+	MV             int      `url:"mv,omitempty"`
+	HTMLBody       int      `url:"htmlbody,omitempty"`
+	Timeline       int      `url:"timeline,omitempty"`
+	IgnoreSSL      int      `url:"ignoreSSL,omitempty"`
+	Lighthouse     int      `url:"lighthouse,omitempty"`
+	MedianMetric   string   `url:"medianMetric,omitempty"`
+}
+
+type TestResponse struct {
+	StatusCode int    `json:"statusCode"`
+	StatusText string `json:"statusText"`
+	Data       struct {
+		TestId     string `json:"testId"`
+		OwnerKey   string `json:"ownerKey"`
+		JSONUrl    string `json:"jsonUrl"`
+		XMLUrl     string `json:"xmlUrl"`
+		UserUrl    string `json:"userUrl"`
+		SummaryCSV string `json:"summaryCSV"`
+		DetailCSV  string `json:"detailCSV"`
+	} `json:"data"`
+}
+
+type TestStatus struct {
+	StatusCode int    `json:"statusCode"`
+	StatusText string `json:"statusText"`
+	Id         string `json:"id"`
+	Data       struct {
+		StatusCode int         `json:"statusCode"`
+		StatusText string      `json:"statusText"`
+		Id         string      `json:"id"`
+		TestInfo   TestOptions `json:"testInfo"`
+	} `json:"data"`
+	TestId          string `json:"testId"`
+	Runs            int    `json:"runs"`
+	FVOnly          int    `json:"fvonly"`
+	Remote          bool   `json:"remote"`
+	TestsExpected   int    `json:"testsExpected"`
+	Location        string `json:"location"`
+	Elapsed         int    `json:"elapsed"`
+	BehindCount     int    `json:"behindCount"`
+	FVRunsCompleted int    `json:"fvRunsCompleted"`
+	RVRunsCompleted int    `json:"rvRunsCompleted"`
 }
