@@ -8,14 +8,14 @@ import (
 	"github.com/gocarina/gocsv"
 )
 
-func parseData(data []byte, format string, response interface{}) error {
+func parseData(data string, format string, response interface{}) error {
 	var err error = nil
 
 	switch format {
 	case "json":
-		err = json.Unmarshal(data, response)
+		err = json.Unmarshal([]byte(data), response)
 	case "csv":
-		err = gocsv.UnmarshalBytes(data, response)
+		err = gocsv.UnmarshalString(data, response)
 	default:
 		log.Println("Unknown format : ", format)
 	}

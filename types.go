@@ -17,7 +17,11 @@ const (
 )
 
 const (
-	wptStatusOk = 200
+	wptStatusTestRunning   = 100
+	wptStatusTestQueued    = 101
+	wptStatusTestSuccess   = 200
+	wptStatusTestNotFound  = 400
+	wptStatusTestCancelled = 402
 )
 
 var (
@@ -348,11 +352,6 @@ type HistoryItem struct {
 	TestID   string `csv:"Test ID"`
 	URL      string `csv:"URL"`
 	Label    string `csv:"Label"`
-}
-
-type Test struct {
-	Client  *Client
-	Options *TestOptions
 }
 
 type TestOptions struct {

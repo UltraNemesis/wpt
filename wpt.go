@@ -7,21 +7,38 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/google/go-querystring/query"
 )
 
-type Options struct {
+const (
+	DefualtStatusPollingInterval = 5
+	DefaultTestTimeout           = 30
+)
+
+var (
+	StatusPollingInterval time.Duration = DefualtStatusPollingInterval
+	TestTimeout           time.Duration = DefaultTestTimeout
+)
+
+type ClientOptions struct {
 	URL    *url.URL
 	APIKey string
 }
 
 type Client struct {
-	options    *Options
+	options    *ClientOptions
 	httpClient *http.Client
 }
 
-func NewClient(options *Options) (*Client, error) {
+type Test struct {
+	client   *Client
+	options  *TestOptions
+	Response *TestResponse
+}
+
+func NewClient(options *ClientOptions) (*Client, error) {
 
 	if options.URL == nil {
 		options.URL, _ = url.Parse(defaultURL)
@@ -37,21 +54,21 @@ func NewClient(options *Options) (*Client, error) {
 
 func (c *Client) NewTest(options *TestOptions) (*Test, error) {
 	return &Test{
-		Client:  c,
-		Options: options,
+		client:  c,
+		options: options,
 	}, nil
 }
 
 func (t *Test) Run() (*TestResponse, error) {
-	v, _ := query.Values(t.Options)
+	v, _ := query.Values(t.options)
 
-	if len(t.Client.options.APIKey) > 0 {
-		v.Add("k", t.Client.options.APIKey)
+	if len(t.client.options.APIKey) > 0 {
+		v.Add("k", t.client.options.APIKey)
 	}
 
 	v.Add("f", "json")
 
-	resp, err := t.Client.query(wptQueryRunTest, v)
+	resp, err := t.client.query(wptQueryRunTest, v)
 
 	var response TestResponse
 
@@ -62,7 +79,35 @@ func (t *Test) Run() (*TestResponse, error) {
 		parseData(resp, v.Get("f"), &response)
 	}
 
+	t.Response = &response
+
 	return &response, err
+}
+
+func (t *Test) RunSync() {
+	t.Run()
+	t.monitor()
+}
+
+func (t *Test) monitor() {
+	for {
+		select {
+
+		default:
+			time.Sleep(StatusPollingInterval * time.Second)
+
+			status, _ := t.client.GetStatus(t.Response.Data.TestId)
+
+			log.Println(status.StatusCode)
+
+			switch status.StatusCode {
+			case wptStatusTestSuccess, wptStatusTestNotFound, wptStatusTestCancelled:
+				log.Println("Exiting")
+				return
+			}
+
+		}
+	}
 }
 
 func (c *Client) GetLocations() (*WPTLocations, error) {
@@ -143,7 +188,7 @@ func (c *Client) CancelTest(testId string) error {
 	return err
 }
 
-func (c *Client) query(path string, values url.Values) ([]byte, error) {
+func (c *Client) query(path string, values url.Values) (string, error) {
 	url := c.options.URL
 	url.Path = path
 	url.RawQuery = values.Encode()
@@ -153,17 +198,17 @@ func (c *Client) query(path string, values url.Values) ([]byte, error) {
 	log.Println("Making Request : ", url.String())
 
 	if err != nil {
-		return nil, errCreateRequest
+		return "", errCreateRequest
 	}
 
 	resp, err := c.httpClient.Do(req)
 
 	if err != nil {
-		return nil, errQueryServer
+		return "", errQueryServer
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, errBadResponse
+		return "", errBadResponse
 	}
 
 	defer resp.Body.Close()
@@ -171,10 +216,10 @@ func (c *Client) query(path string, values url.Values) ([]byte, error) {
 	body, err := ioutil.ReadAll(resp.Body)
 
 	if err != nil {
-		return nil, errReadBody
+		return "", errReadBody
 	}
 
 	//response = parse(body, values.Get("f"), response)
 
-	return body, nil
+	return string(body), nil
 }
